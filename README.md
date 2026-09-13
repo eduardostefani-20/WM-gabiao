@@ -16,6 +16,9 @@ Site institucional estático (HTML5, CSS3 e JavaScript puro, sem frameworks) par
 │   ├── images/
 │   ├── icons/
 │   └── logo/
+├── admin.html
+├── supabase/
+│   └── schema.sql
 └── README.md
 ```
 
@@ -38,6 +41,19 @@ python3 -m http.server
 - Indicadores: +25 obras, +25 projetos e +6 profissionais
 - Imagens reais aplicadas nas seções de serviços, obras e apresentação
 - Logo oficial e novo favicon configurados
+
+## Banco de dados e área administrativa
+
+O formulário salva as solicitações no Supabase. O painel administrativo está em `admin.html` e permite fazer login, buscar solicitações, filtrar por status, marcar como atendida e excluir registros.
+
+### Configuração do Supabase
+
+1. Abra o SQL Editor do projeto Supabase.
+2. Execute o conteúdo de `supabase/schema.sql`.
+3. Em Authentication > Users, crie o usuário administrador com e-mail e senha.
+4. Acesse `admin.html` e entre com esse usuário.
+
+A chave usada no frontend é uma chave publicável. Nunca coloque uma chave `service_role` no HTML ou JavaScript.
 
 ## Paleta de cores
 

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administração | WM Gabião</title>
+<link rel="icon" type="image/png" href="assets/icons/Design%20sem%20nome.png">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<main class="admin-shell">
+  <section class="login-panel" id="login-panel">
+    <img src="assets/logo/ChatGPT%20Image%2013%20de%20set.%20de%202026,%2013_29_14.png" alt="WM Construções e Gabiões" class="admin-logo">
+    <p class="eyebrow">Área restrita</p>
+    <h1>Solicitações de orçamento</h1>
+    <p class="muted">Entre com o usuário administrador do Supabase.</p>
+    <form id="login-form" class="admin-form">
+      <label for="login-email">E-mail</label>
+      <input id="login-email" type="email" autocomplete="username" required>
+      <label for="login-password">Senha</label>
+      <input id="login-password" type="password" autocomplete="current-password" required>
+      <button class="primary-button" type="submit">Entrar</button>
+      <p class="form-message" id="login-message" role="alert"></p>
+    </form>
+  </section>
+
+  <section class="dashboard is-hidden" id="dashboard">
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">WM Gabião</p>
+        <h1>Solicitações</h1>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="text-button">Voltar ao site</a>
+        <button id="logout-button" class="secondary-button" type="button">Sair</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <label class="search-box" for="search-input">
+        <span>Buscar</span>
+        <input id="search-input" type="search" placeholder="Nome, e-mail ou serviço">
+      </label>
+      <label class="status-filter" for="status-filter">
+        <span>Status</span>
+        <select id="status-filter">
+          <option value="todos">Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="atendido">Atendidos</option>
+        </select>
+      </label>
+      <button id="refresh-button" class="secondary-button" type="button">Atualizar</button>
+    </div>
+
+    <p class="form-message" id="dashboard-message" role="status"></p>
+    <div class="request-list" id="request-list"></div>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -13,6 +13,10 @@ const COMPANY_STATS = {
   profissionais: 6
 };
 
+const SUPABASE_URL = 'https://qaflebsbbmjcmophlkbi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_3Q5rEIIHV3hrATgSTR0Vaw_fX97rgxm';
+const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
   initMobileMenu();
@@ -186,7 +190,7 @@ function initForm(){
     }
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     let valid = true;
     form.querySelectorAll('input[required], select[required]').forEach(field => {
@@ -200,7 +204,34 @@ function initForm(){
       return;
     }
 
-    /* Aqui deve ser integrado o envio real (API, e-mail, CRM etc.) */
+    if (!supabaseClient){
+      success.textContent = 'Não foi possível conectar ao sistema. Tente novamente em instantes.';
+      success.classList.add('is-visible');
+      return;
+    }
+
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
+    success.classList.remove('is-visible');
+
+    const { error } = await supabaseClient.from('solicitacoes').insert({
+      nome: form.nome.value.trim(),
+      telefone: form.telefone.value.trim(),
+      email: form.email.value.trim(),
+      servico: form.servico.value,
+      mensagem: form.mensagem.value.trim()
+    });
+
+    submit.disabled = false;
+    submit.removeAttribute('aria-busy');
+
+    if (error){
+      success.textContent = 'Não foi possível enviar sua mensagem. Tente novamente.';
+      success.classList.add('is-visible');
+      return;
+    }
+
     success.textContent = 'Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.';
     success.classList.add('is-visible');
     form.reset();
