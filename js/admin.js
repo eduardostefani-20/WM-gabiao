@@ -10,6 +10,9 @@ const dashboardMessage = document.getElementById('dashboard-message');
 const requestList = document.getElementById('request-list');
 const searchInput = document.getElementById('search-input');
 const statusFilter = document.getElementById('status-filter');
+const totalCount = document.getElementById('total-count');
+const pendingCount = document.getElementById('pending-count');
+const doneCount = document.getElementById('done-count');
 let requests = [];
 
 function showMessage(element, message, isError = false){
@@ -28,6 +31,9 @@ function showDashboard(){
 }
 
 function renderRequests(){
+  totalCount.textContent = requests.length;
+  pendingCount.textContent = requests.filter(request => request.status === 'pendente').length;
+  doneCount.textContent = requests.filter(request => request.status === 'atendido').length;
   const search = searchInput.value.trim().toLocaleLowerCase();
   const status = statusFilter.value;
   const filtered = requests.filter(request => {

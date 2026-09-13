@@ -28,13 +28,29 @@
     <header class="dashboard-header">
       <div>
         <p class="eyebrow">WM Gabião</p>
-        <h1>Solicitações</h1>
+        <h1>Painel de solicitações</h1>
+        <p class="dashboard-subtitle">Acompanhe os pedidos de orçamento recebidos pelo site.</p>
       </div>
       <div class="header-actions">
         <a href="index.html" class="text-button">Voltar ao site</a>
         <button id="logout-button" class="secondary-button" type="button">Sair</button>
       </div>
     </header>
+
+    <div class="summary-grid" aria-label="Resumo das solicitações">
+      <article class="summary-card summary-card--total">
+        <span>Total recebido</span>
+        <strong id="total-count">0</strong>
+      </article>
+      <article class="summary-card summary-card--pending">
+        <span>Aguardando atendimento</span>
+        <strong id="pending-count">0</strong>
+      </article>
+      <article class="summary-card summary-card--done">
+        <span>Atendidos</span>
+        <strong id="done-count">0</strong>
+      </article>
+    </div>
 
     <div class="toolbar">
       <label class="search-box" for="search-input">
