@@ -16,6 +16,17 @@ const COMPANY_STATS = {
 const SUPABASE_URL = 'https://qaflebsbbmjcmophlkbi.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_3Q5rEIIHV3hrATgSTR0Vaw_fX97rgxm';
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const LOCAL_IMAGE_FALLBACKS = {
+  'Contenção e estabilização': 'assets/images/Gabion_retaining_wall_stabilizin%E2%80%A6_2K_20260913135247.jpeg',
+  'Drenagem e controle de erosão': 'assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg',
+  'Terraplenagem': 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg',
+  'Estruturas metálicas': 'assets/images/Gabion_structure_with_stones_2K_20260913135215.jpeg',
+  'Infraestrutura': 'assets/images/images%20(2).jpeg',
+  'Projeto de contenção de margem': 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg',
+  'Estrutura metálica industrial': 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg',
+  'Preparação e nivelamento de terreno': 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg',
+  'Infraestrutura urbana': 'assets/images/images%20(1).jpeg'
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
@@ -47,7 +58,15 @@ async function loadSiteContent(){
 function applySiteContent(content){
   document.querySelectorAll('[data-content]').forEach(element => {
     const value = content[element.dataset.content];
-    if (value !== undefined && value !== '') element.textContent = value;
+    if (value !== undefined && value !== '') {
+      if (element.dataset.content === 'hero_title' && element.querySelector('.text-gold')) {
+        const emphasis = element.querySelector('.text-gold');
+        const emphasisText = emphasis.textContent;
+        element.firstChild.textContent = `${value.replace(emphasisText, '').replace(/\s+$/, '')} `;
+      } else {
+        element.textContent = value;
+      }
+    }
   });
   if (content.phone){ document.querySelectorAll('a[href^="tel:"]').forEach(link => { link.href = `tel:${content.phone.replace(/\D/g, '')}`; }); }
   if (content.email){ document.querySelectorAll('a[href^="mailto:"]').forEach(link => { link.href = `mailto:${content.email}`; }); }
@@ -67,7 +86,8 @@ function renderServices(items){
   items.forEach(item => {
     const article = document.createElement('article'); article.className = 's-card';
     const image = document.createElement('div'); image.className = 's-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title);
-    if (item.image_url) image.style.backgroundImage = `url("${item.image_url.replaceAll('"', '')}")`;
+    const imageUrl = item.image_url || LOCAL_IMAGE_FALLBACKS[item.title];
+    if (imageUrl) image.style.backgroundImage = `url("${imageUrl.replaceAll('"', '')}")`;
     const body = document.createElement('div'); body.className = 's-card__body';
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('class', 'icon icon--gold'); icon.setAttribute('viewBox', '0 0 24 24'); const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#${item.icon || 'icon-wall'}`); icon.append(use);
     const title = document.createElement('h3'); title.textContent = item.title; const description = document.createElement('p'); description.textContent = item.description; body.append(icon, title, description); article.append(image, body); grid.append(article);
@@ -78,7 +98,7 @@ function renderProjects(items){
   const grid = document.getElementById('portfolio-grid'); const more = document.getElementById('ver-todas'); grid.replaceChildren();
   items.forEach(item => {
     const card = document.createElement('button'); card.className = 'p-card'; card.dataset.filter = item.category; card.dataset.title = item.title; card.dataset.type = item.type_label || item.category; card.dataset.location = item.location;
-    const image = document.createElement('span'); image.className = 'p-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title); if (item.image_url) image.style.backgroundImage = `url("${item.image_url.replaceAll('"', '')}")`;
+    const image = document.createElement('span'); image.className = 'p-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title); const imageUrl = item.image_url || LOCAL_IMAGE_FALLBACKS[item.title]; if (imageUrl) image.style.backgroundImage = `url("${imageUrl.replaceAll('"', '')}")`;
     const info = document.createElement('span'); info.className = 'p-card__info'; const title = document.createElement('strong'); title.textContent = item.title; const detail = document.createElement('small'); detail.textContent = `${item.type_label || item.category} · ${item.location}`; info.append(title, detail); card.append(image, info); grid.append(card);
   });
   if (more) grid.append(more);

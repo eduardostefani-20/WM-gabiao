@@ -106,10 +106,13 @@ insert into public.site_content (id, content)
 values ('principal', jsonb_build_object(
   'hero_title', 'Soluções em engenharia e construção para obras que precisam de resistência.',
   'hero_text', 'Atuamos com gabiões, estruturas metálicas, terraplenagem, drenagem e infraestrutura, entregando segurança, qualidade e resultados para o seu projeto.',
+  'hero_image', 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg',
   'about_title', 'Mais que obras, entregamos soluções.',
   'about_text', 'A WM Gabião atua no segmento de engenharia e construção com foco em soluções de contenção, drenagem, terraplenagem, estruturas metálicas e infraestrutura. Ativa desde 23/05/2023, somos uma microempresa com atuação em todo o Brasil. Nosso compromisso é transformar projetos em resultados concretos, com qualidade, segurança e responsabilidade.',
+  'about_image', 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg',
   'budget_title', 'Vamos conversar sobre seu projeto?',
   'budget_text', 'Preencha o formulário e nossa equipe entrará em contato para entender sua necessidade e avaliar a melhor solução.',
+  'budget_image', 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg',
   'footer_text', 'Soluções em engenharia e construção para obras que precisam de resistência.',
   'phone', '(15) 99116-7340', 'email', 'eduatdo.oliveira222220@gmail.com', 'location', 'Atendimento em todo o Brasil', 'hours', '24 horas',
   'whatsapp', '5515991167340', 'instagram', 'wmgabiao', 'stats_works', '25', 'stats_projects', '25', 'stats_people', '6', 'stats_area', 'Brasil inteiro'
@@ -127,6 +130,18 @@ from (values
 ) as item(title, description, icon, sort_order)
 where not exists (select 1 from public.services);
 
+-- Mantém as imagens locais do site também para registros já existentes.
+update public.services set image_url = case title
+  when 'Contenção e estabilização' then 'assets/images/Gabion_retaining_wall_stabilizin%E2%80%A6_2K_20260913135247.jpeg'
+  when 'Drenagem e controle de erosão' then 'assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg'
+  when 'Terraplenagem' then 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg'
+  when 'Estruturas metálicas' then 'assets/images/Gabion_structure_with_stones_2K_20260913135215.jpeg'
+  when 'Infraestrutura' then 'assets/images/images%20(2).jpeg'
+  else image_url
+end
+where title in ('Contenção e estabilização', 'Drenagem e controle de erosão', 'Terraplenagem', 'Estruturas metálicas', 'Infraestrutura')
+  and coalesce(image_url, '') = '';
+
 insert into public.projects (title, category, type_label, location, sort_order)
 select item.title, item.category, item.type_label, item.location, item.sort_order
 from (values
@@ -137,3 +152,14 @@ from (values
   ('Infraestrutura urbana', 'urbana', 'Obras urbanas', 'Brasil', 5)
 ) as item(title, category, type_label, location, sort_order)
 where not exists (select 1 from public.projects);
+
+update public.projects set image_url = case title
+  when 'Projeto de contenção de margem' then 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg'
+  when 'Estrutura metálica industrial' then 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg'
+  when 'Preparação e nivelamento de terreno' then 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg'
+  when 'Drenagem e controle de erosão' then 'assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg'
+  when 'Infraestrutura urbana' then 'assets/images/images%20(1).jpeg'
+  else image_url
+end
+where title in ('Projeto de contenção de margem', 'Estrutura metálica industrial', 'Preparação e nivelamento de terreno', 'Drenagem e controle de erosão', 'Infraestrutura urbana')
+  and coalesce(image_url, '') = '';
