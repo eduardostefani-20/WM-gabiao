@@ -72,23 +72,12 @@ function applySiteContent(content){
   if (content.email){ document.querySelectorAll('a[href^="mailto:"]').forEach(link => { link.href = `mailto:${content.email}`; }); }
   if (content.whatsapp){ document.querySelectorAll('a[href*="wa.me"]').forEach(link => { link.href = `https://wa.me/${content.whatsapp.replace(/\D/g, '')}`; }); }
   if (content.instagram){ document.querySelectorAll('a[href*="instagram.com"]').forEach(link => { link.href = content.instagram.startsWith('http') ? content.instagram : `https://instagram.com/${content.instagram.replace('@', '')}`; }); }
-  if (content.hero_image) setMedia(document.querySelector('.hero__bg'), content.hero_image, content.hero_image_type);
-  if (content.about_image) setMedia(document.querySelector('.sobre__img'), content.about_image, content.about_image_type);
-  if (content.budget_image) setMedia(document.querySelector('.orcamento__bg'), content.budget_image, content.budget_image_type);
+  if (content.hero_image) document.querySelector('.hero__bg').style.backgroundImage = `url("${content.hero_image.replaceAll('"', '')}")`;
+  if (content.about_image) document.querySelector('.sobre__img').style.backgroundImage = `url("${content.about_image.replaceAll('"', '')}")`;
+  if (content.budget_image) document.querySelector('.orcamento__bg').style.backgroundImage = `url("${content.budget_image.replaceAll('"', '')}")`;
   const stats = document.querySelectorAll('.stat__num:not(.stat__num--text)');
   [content.stats_works, content.stats_projects, content.stats_people].forEach((value, index) => { if (value !== undefined && stats[index]) stats[index].dataset.count = value; });
   if (content.stats_area) document.querySelector('.stat__num--text').textContent = content.stats_area;
-}
-
-function setMedia(element, url, mediaType = ''){
-  if (!element || !url) return;
-  if (mediaType === 'video' || /\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
-    const video = document.createElement('video');
-    video.className = 'media-background'; video.src = url; video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true; video.setAttribute('aria-label', element.getAttribute('aria-label') || 'Vídeo');
-    element.replaceChildren(video); element.classList.add('has-video');
-  } else {
-    element.style.backgroundImage = `url("${url.replaceAll('"', '')}")`;
-  }
 }
 
 function renderServices(items){
@@ -98,7 +87,7 @@ function renderServices(items){
     const article = document.createElement('article'); article.className = 's-card';
     const image = document.createElement('div'); image.className = 's-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title);
     const imageUrl = item.image_url || LOCAL_IMAGE_FALLBACKS[item.title];
-    if (imageUrl) setMedia(image, imageUrl, item.media_type);
+    if (imageUrl) image.style.backgroundImage = `url("${imageUrl.replaceAll('"', '')}")`;
     const body = document.createElement('div'); body.className = 's-card__body';
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('class', 'icon icon--gold'); icon.setAttribute('viewBox', '0 0 24 24'); const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#${item.icon || 'icon-wall'}`); icon.append(use);
     const title = document.createElement('h3'); title.textContent = item.title; const description = document.createElement('p'); description.textContent = item.description; body.append(icon, title, description); article.append(image, body); grid.append(article);
@@ -109,7 +98,7 @@ function renderProjects(items){
   const grid = document.getElementById('portfolio-grid'); const more = document.getElementById('ver-todas'); grid.replaceChildren();
   items.forEach(item => {
     const card = document.createElement('button'); card.className = 'p-card'; card.dataset.filter = item.category; card.dataset.title = item.title; card.dataset.type = item.type_label || item.category; card.dataset.location = item.location;
-    const image = document.createElement('span'); image.className = 'p-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title); const imageUrl = item.image_url || LOCAL_IMAGE_FALLBACKS[item.title]; if (imageUrl) setMedia(image, imageUrl, item.media_type);
+    const image = document.createElement('span'); image.className = 'p-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title); const imageUrl = item.image_url || LOCAL_IMAGE_FALLBACKS[item.title]; if (imageUrl) image.style.backgroundImage = `url("${imageUrl.replaceAll('"', '')}")`;
     const info = document.createElement('span'); info.className = 'p-card__info'; const title = document.createElement('strong'); title.textContent = item.title; const detail = document.createElement('small'); detail.textContent = `${item.type_label || item.category} · ${item.location}`; info.append(title, detail); card.append(image, info); grid.append(card);
   });
   if (more) grid.append(more);
