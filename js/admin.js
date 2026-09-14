@@ -66,8 +66,21 @@ function renderRequests(){
 }
 
 async function loadRequests(){
-  const { data, error } = await supabaseClient.from('solicitacoes').select('*').order('created_at', { ascending: false });
-  if (error){ showMessage(dashboardMessage, 'Não foi possível carregar as solicitações.', true); return; }
+  let data;
+  let error;
+  try {
+    ({ data, error } = await supabaseClient.from('solicitacoes').select('*').order('created_at', { ascending: false }));
+  } catch (requestError) {
+    error = requestError;
+  }
+  if (error){
+    const errorText = String(error.message || '').toLowerCase();
+    const message = errorText.includes('api') || errorText.includes('not found')
+      ? 'A tabela solicitacoes está desativada na Data API do Supabase. Habilite-a em Project Settings > API > Data API.'
+      : 'Não foi possível carregar as solicitações. Verifique as permissões da tabela no Supabase.';
+    showMessage(dashboardMessage, message, true);
+    return;
+  }
   requests = data || []; showMessage(dashboardMessage, `${requests.length} solicitação(ões) encontrada(s).`); renderRequests();
 }
 
