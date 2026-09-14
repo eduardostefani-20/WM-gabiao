@@ -269,19 +269,32 @@ function initForm(){
     submit.setAttribute('aria-busy', 'true');
     success.classList.remove('is-visible');
 
-    const { error } = await supabaseClient.from('solicitacoes').insert({
-      nome: form.nome.value.trim(),
-      telefone: form.telefone.value.trim(),
-      email: form.email.value.trim(),
-      servico: form.servico.value,
-      mensagem: form.mensagem.value.trim()
-    });
+    let error;
+    try {
+      ({ error } = await supabaseClient.from('solicitacoes').insert({
+        nome: form.nome.value.trim(),
+        telefone: form.telefone.value.trim(),
+        email: form.email.value.trim(),
+        servico: form.servico.value,
+        mensagem: form.mensagem.value.trim()
+      }));
+    } catch (requestError) {
+      error = requestError;
+    }
 
     submit.disabled = false;
     submit.removeAttribute('aria-busy');
 
     if (error){
-      success.textContent = 'Não foi possível enviar sua mensagem. Tente novamente.';
+      const errorCode = error.code || '';
+      const errorMessage = String(error.message || '').toLowerCase();
+      if (errorCode === '42P01' || errorMessage.includes('solicitacoes') && errorMessage.includes('not found')) {
+        success.textContent = 'O formulário ainda não está configurado no banco. Execute o arquivo supabase/schema.sql no Supabase.';
+      } else if (errorCode === '42501' || errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+        success.textContent = 'O banco bloqueou o envio. Execute novamente a parte de políticas do arquivo supabase/schema.sql no Supabase.';
+      } else {
+        success.textContent = 'Não foi possível enviar agora. Verifique sua conexão e tente novamente.';
+      }
       success.classList.add('is-visible');
       return;
     }
