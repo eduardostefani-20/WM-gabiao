@@ -107,6 +107,7 @@ values ('principal', jsonb_build_object(
   'hero_title', 'Soluções em engenharia e construção para obras que precisam de resistência.',
   'hero_text', 'Atuamos com gabiões, estruturas metálicas, terraplenagem, drenagem e infraestrutura, entregando segurança, qualidade e resultados para o seu projeto.',
   'hero_image', 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg',
+  'services_title', 'Nossas soluções',
   'about_title', 'Mais que obras, entregamos soluções.',
   'about_text', 'A WM Gabião atua no segmento de engenharia e construção com foco em soluções de contenção, drenagem, terraplenagem, estruturas metálicas e infraestrutura. Ativa desde 23/05/2023, somos uma microempresa com atuação em todo o Brasil. Nosso compromisso é transformar projetos em resultados concretos, com qualidade, segurança e responsabilidade.',
   'about_image', 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg',
