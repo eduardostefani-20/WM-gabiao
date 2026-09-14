@@ -10,6 +10,7 @@ const dashboardMessage = document.getElementById('dashboard-message');
 let requests = [];
 let services = [];
 let projects = [];
+let dashboardInitialized = false;
 
 function showMessage(element, message, isError = false){
   element.textContent = message;
@@ -21,6 +22,8 @@ function formDataObject(form){
 }
 
 function showDashboard(){
+  if (dashboardInitialized) return;
+  dashboardInitialized = true;
   loginPanel.classList.add('is-hidden');
   dashboard.classList.remove('is-hidden');
   loadRequests();
@@ -29,8 +32,16 @@ function showDashboard(){
 }
 
 function activatePanel(panelId){
-  document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.toggle('is-active', tab.dataset.panel === panelId));
-  document.querySelectorAll('.dashboard > section').forEach(panel => panel.classList.toggle('is-hidden', panel.id !== panelId));
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    const active = tab.dataset.panel === panelId;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('.dashboard > section[role="tabpanel"]').forEach(panel => {
+    const active = panel.id === panelId;
+    panel.classList.toggle('is-hidden', !active);
+    panel.hidden = !active;
+  });
 }
 
 function formatDate(value){
@@ -69,6 +80,16 @@ function renderRequests(){
   });
 }
 
+function detail(label, value){
+  const wrapper = document.createElement('div');
+  const labelElement = document.createElement('strong');
+  labelElement.textContent = label;
+  const valueElement = document.createElement('span');
+  valueElement.textContent = value || 'Não informado';
+  wrapper.append(labelElement, valueElement);
+  return wrapper;
+}
+
 async function loadRequests(){
   showMessage(dashboardMessage, 'Carregando solicitações...');
   let data;
@@ -90,27 +111,47 @@ async function loadRequests(){
 }
 
 async function loadContent(){
-  const { data, error } = await supabaseClient.from('site_content').select('content').eq('id', 'principal').maybeSingle();
-  if (error) return showMessage(document.getElementById('content-message'), 'Execute primeiro o schema atualizado no Supabase.', true);
-  const form = document.getElementById('content-form');
-  const content = data?.content || {};
-  Object.entries(content).forEach(([name, value]) => { if (form.elements[name]) form.elements[name].value = value; });
+  try {
+    const { data, error } = await supabaseClient.from('site_content').select('content').eq('id', 'principal').maybeSingle();
+    if (error) return showMessage(document.getElementById('content-message'), 'Não foi possível carregar o conteúdo. Confira o schema e as permissões no Supabase.', true);
+    const form = document.getElementById('content-form');
+    const content = data?.content || {};
+    Object.entries(content).forEach(([name, value]) => { if (form.elements[name]) form.elements[name].value = value; });
+  } catch (error) {
+    showMessage(document.getElementById('content-message'), 'Não foi possível conectar ao conteúdo do site.', true);
+  }
 }
 
 async function saveContent(){
   const form = document.getElementById('content-form');
-  const { error } = await supabaseClient.from('site_content').upsert({ id: 'principal', content: formDataObject(form), updated_at: new Date().toISOString() });
-  showMessage(document.getElementById('content-message'), error ? 'Não foi possível salvar o conteúdo.' : 'Conteúdo salvo. Atualize o site público para ver as alterações.', Boolean(error));
+  if (!form.checkValidity()){
+    form.reportValidity();
+    return;
+  }
+  try {
+    const { error } = await supabaseClient.from('site_content').upsert({ id: 'principal', content: formDataObject(form), updated_at: new Date().toISOString() });
+    showMessage(document.getElementById('content-message'), error ? 'Não foi possível salvar o conteúdo.' : 'Conteúdo salvo. Atualize o site público para ver as alterações.', Boolean(error));
+  } catch (error) {
+    showMessage(document.getElementById('content-message'), 'Não foi possível conectar ao banco para salvar.', true);
+  }
 }
 
 async function loadCatalog(){
-  const [servicesResult, projectsResult] = await Promise.all([
-    supabaseClient.from('services').select('*').order('sort_order'),
-    supabaseClient.from('projects').select('*').order('sort_order')
-  ]);
-  if (!servicesResult.error) services = servicesResult.data || [];
-  if (!projectsResult.error) projects = projectsResult.data || [];
-  renderCatalog('services'); renderCatalog('projects');
+  try {
+    const [servicesResult, projectsResult] = await Promise.all([
+      supabaseClient.from('services').select('*').order('sort_order'),
+      supabaseClient.from('projects').select('*').order('sort_order')
+    ]);
+    if (servicesResult.error || projectsResult.error){
+      showMessage(document.getElementById('catalog-message'), 'Não foi possível carregar serviços e obras. Confira a Data API e as permissões no Supabase.', true);
+      return;
+    }
+    services = servicesResult.data || [];
+    projects = projectsResult.data || [];
+    renderCatalog('services'); renderCatalog('projects');
+  } catch (error) {
+    showMessage(document.getElementById('catalog-message'), 'Não foi possível conectar ao catálogo.', true);
+  }
 }
 
 function renderCatalog(type){
@@ -171,5 +212,5 @@ loginForm.addEventListener('submit', async event => {
   showMessage(loginMessage, '');
   showDashboard();
 });
-document.getElementById('logout-button').addEventListener('click', async () => { await supabaseClient.auth.signOut(); dashboard.classList.add('is-hidden'); loginPanel.classList.remove('is-hidden'); });
+document.getElementById('logout-button').addEventListener('click', async () => { await supabaseClient.auth.signOut(); dashboardInitialized = false; dashboard.classList.add('is-hidden'); loginPanel.classList.remove('is-hidden'); });
 supabaseClient.auth.getSession().then(({ data }) => { if (data.session) showDashboard(); });
