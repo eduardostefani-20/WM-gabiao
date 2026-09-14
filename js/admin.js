@@ -39,6 +39,8 @@ function formatDate(value){
 
 function renderRequests(){
   const list = document.getElementById('request-list');
+  list.classList.remove('is-hidden');
+  list.style.display = 'grid';
   const searchInput = document.getElementById('search-input');
   const statusFilter = document.getElementById('status-filter');
   document.getElementById('total-count').textContent = requests.length;
@@ -56,7 +58,7 @@ function renderRequests(){
   filtered.forEach(request => {
     const article = document.createElement('article'); article.className = 'request-card';
     const head = document.createElement('div'); head.className = 'request-head';
-    const title = document.createElement('h2'); title.textContent = request.nome;
+    const title = document.createElement('h2'); title.textContent = request.nome || 'Solicitante sem nome';
     const badge = document.createElement('span'); badge.className = `status-badge status-${request.status}`; badge.textContent = request.status === 'atendido' ? 'Atendido' : 'Pendente'; head.append(title, badge);
     const details = document.createElement('div'); details.className = 'request-details'; details.append(detail('Serviço', request.servico), detail('Telefone', request.telefone), detail('E-mail', request.email), detail('Recebido', formatDate(request.created_at)));
     const message = document.createElement('p'); message.className = 'request-message'; message.textContent = request.mensagem || 'Nenhuma mensagem adicional.';
