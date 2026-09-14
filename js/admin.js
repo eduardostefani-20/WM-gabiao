@@ -142,6 +142,16 @@ document.getElementById('search-input').addEventListener('input', renderRequests
 document.getElementById('status-filter').addEventListener('change', renderRequests);
 document.getElementById('refresh-button').addEventListener('click', loadRequests);
 
-loginForm.addEventListener('submit', async event => { event.preventDefault(); const { error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value.trim(), password: document.getElementById('login-password').value }); if (error) return showMessage(loginMessage, 'E-mail ou senha inválidos.', true); showMessage(loginMessage, ''); showDashboard(); });
+loginForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const { error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value.trim(), password: document.getElementById('login-password').value });
+  if (error){
+    const message = error.message?.toLowerCase() || '';
+    const friendlyMessage = message.includes('email not confirmed') ? 'Confirme o e-mail da conta no Supabase antes de entrar.' : message.includes('invalid login credentials') ? 'E-mail ou senha incorretos. Verifique os dados no usuário do Supabase.' : 'Não foi possível entrar. Confira a configuração da conta no Supabase.';
+    return showMessage(loginMessage, friendlyMessage, true);
+  }
+  showMessage(loginMessage, '');
+  showDashboard();
+});
 document.getElementById('logout-button').addEventListener('click', async () => { await supabaseClient.auth.signOut(); dashboard.classList.add('is-hidden'); loginPanel.classList.remove('is-hidden'); });
 supabaseClient.auth.getSession().then(({ data }) => { if (data.session) showDashboard(); });
