@@ -66,6 +66,7 @@ function renderRequests(){
 }
 
 async function loadRequests(){
+  showMessage(dashboardMessage, 'Carregando solicitações...');
   let data;
   let error;
   try {
