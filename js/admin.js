@@ -46,11 +46,13 @@ function renderRequests(){
   document.getElementById('done-count').textContent = requests.filter(item => item.status === 'atendido').length;
   const search = searchInput.value.trim().toLocaleLowerCase();
   const filtered = requests.filter(request => {
-    const matchesStatus = statusFilter.value === 'todos' || request.status === statusFilter.value;
+    const requestStatus = String(request.status || '').toLocaleLowerCase();
+    const selectedStatus = statusFilter.value;
+    const matchesStatus = selectedStatus === 'todos' || requestStatus === selectedStatus || selectedStatus === 'pendente' && requestStatus === 'pending' || selectedStatus === 'atendido' && requestStatus === 'done';
     return matchesStatus && `${request.nome} ${request.email} ${request.servico} ${request.telefone}`.toLocaleLowerCase().includes(search);
   });
   list.replaceChildren();
-  if (!filtered.length){ const empty = document.createElement('p'); empty.className = 'empty-state'; empty.textContent = 'Nenhuma solicitação encontrada.'; list.append(empty); return; }
+  if (!filtered.length){ const empty = document.createElement('p'); empty.className = 'empty-state'; empty.textContent = requests.length ? 'Nenhuma solicitação corresponde aos filtros.' : 'Nenhuma solicitação encontrada.'; list.append(empty); return; }
   filtered.forEach(request => {
     const article = document.createElement('article'); article.className = 'request-card';
     const head = document.createElement('div'); head.className = 'request-head';

@@ -9,7 +9,7 @@
 .summary-card--done{border-left:4px solid #4c9c7a}
 .toolbar{box-shadow:var(--shadow-soft)}
 .search-box input:focus,.status-filter select:focus,.admin-form input:focus{border-color:var(--gold);outline:2px solid rgba(216,167,45,.2)}
-.request-card{box-shadow:var(--shadow-soft);transition:transform .2s ease,box-shadow .2s ease}
+.request-list{display:grid;gap:14px;margin-top:18px}.request-card{display:block;min-height:150px;padding:22px;background:#fff;color:var(--ink);border-left:4px solid var(--gold);box-shadow:var(--shadow-soft);transition:transform .2s ease,box-shadow .2s ease}
 .request-card:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,.2)}
 .request-actions button{transition:background .2s ease,transform .2s ease}
 .request-actions button:hover{transform:translateY(-1px)}
