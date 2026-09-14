@@ -44,7 +44,7 @@ python3 -m http.server
 
 ## Banco de dados e área administrativa
 
-O formulário salva as solicitações no Supabase. O painel administrativo está em `admin.html` e permite fazer login, buscar solicitações, filtrar por status, marcar como atendida e excluir registros.
+O formulário salva as solicitações no Supabase. O painel administrativo está em `admin.html` e permite fazer login, editar textos, contatos, indicadores e imagens por URL, cadastrar serviços e obras, publicar/ocultar itens, além de buscar solicitações, filtrar por status, marcar como atendida e excluir registros.
 
 ### Configuração do Supabase
 
@@ -52,6 +52,9 @@ O formulário salva as solicitações no Supabase. O painel administrativo está
 2. Execute o conteúdo de `supabase/schema.sql`.
 3. Em Authentication > Users, crie o usuário administrador com e-mail e senha.
 4. Acesse `admin.html` e entre com esse usuário.
+5. No painel, use as abas **Conteúdo do site** e **Serviços e obras** para atualizar o site. As alterações aparecem no site público após recarregar a página.
+
+O campo de imagem aceita uma URL pública. Para usar imagens próprias, hospede-as no Storage do Supabase ou em outro serviço público e cole a URL no painel. Não use uma chave `service_role` no frontend.
 
 A chave usada no frontend é uma chave publicável. Nunca coloque uma chave `service_role` no HTML ou JavaScript.
 

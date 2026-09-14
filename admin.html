@@ -37,6 +37,34 @@
       </div>
     </header>
 
+    <nav class="admin-tabs" aria-label="Seções administrativas">
+      <button class="admin-tab is-active" type="button" data-panel="content-panel">Conteúdo do site</button>
+      <button class="admin-tab" type="button" data-panel="services-panel">Serviços e obras</button>
+      <button class="admin-tab" type="button" data-panel="leads-panel">Solicitações</button>
+    </nav>
+
+    <section class="editor-panel" id="content-panel">
+      <div class="panel-heading">
+        <div><p class="eyebrow">Editor visual</p><h2>Informações do site</h2><p>Atualize textos, contatos e números sem editar arquivos.</p></div>
+        <button class="primary-button" id="save-content-button" type="button">Salvar alterações</button>
+      </div>
+      <form class="content-form" id="content-form">
+        <fieldset><legend>Apresentação</legend><label>Título principal<input name="hero_title" required></label><label>Texto principal<textarea name="hero_text" rows="3"></textarea></label><label>Imagem principal (URL)<input name="hero_image" type="url" placeholder="https://..."></label><label>Título da seção Sobre<input name="about_title"></label><label>Texto sobre a empresa<textarea name="about_text" rows="5"></textarea></label><label>Imagem da seção Sobre (URL)<input name="about_image" type="url" placeholder="https://..."></label></fieldset>
+        <fieldset><legend>Orçamento</legend><label>Título<input name="budget_title"></label><label>Descrição<textarea name="budget_text" rows="3"></textarea></label><label>Imagem do orçamento (URL)<input name="budget_image" type="url" placeholder="https://..."></label><label>Texto do rodapé<textarea name="footer_text" rows="2"></textarea></label></fieldset>
+        <fieldset><legend>Contato e redes</legend><div class="editor-grid"><label>Telefone<input name="phone"></label><label>E-mail<input name="email" type="email"></label><label>Localização<input name="location"></label><label>Horário<input name="hours"></label><label>WhatsApp (somente números)<input name="whatsapp"></label><label>Instagram<input name="instagram"></label></div></fieldset>
+        <fieldset><legend>Indicadores</legend><div class="editor-grid"><label>Obras realizadas<input name="stats_works" type="number" min="0"></label><label>Projetos executados<input name="stats_projects" type="number" min="0"></label><label>Profissionais<input name="stats_people" type="number" min="0"></label><label>Área de atuação<input name="stats_area"></label></div></fieldset>
+      </form>
+      <p class="form-message" id="content-message" role="status"></p>
+    </section>
+
+    <section class="editor-panel is-hidden" id="services-panel">
+      <div class="panel-heading"><div><p class="eyebrow">Catálogo</p><h2>Serviços e obras</h2><p>Cadastre, edite, ordene e oculte itens exibidos no site.</p></div></div>
+      <div class="catalog-grid"><form class="catalog-form" id="service-form"><h3 id="service-form-title">Novo serviço</h3><input type="hidden" name="id"><label>Nome do serviço<input name="title" required></label><label>Descrição<textarea name="description" rows="3" required></textarea></label><label>Ícone<select name="icon"><option value="icon-wall">Contenção</option><option value="icon-drain">Drenagem</option><option value="icon-excavator">Terraplenagem</option><option value="icon-steel">Estruturas</option><option value="icon-road">Infraestrutura</option></select></label><label>URL da imagem<input name="image_url" type="url" placeholder="https://..."></label><label>Ordem<input name="sort_order" type="number" value="0"></label><label class="check-label"><input name="active" type="checkbox" checked> Exibir no site</label><div class="form-buttons"><button class="primary-button" type="submit">Salvar serviço</button><button class="text-button" id="cancel-service" type="button">Limpar</button></div></form><div><h3>Serviços cadastrados</h3><div id="services-list" class="catalog-list"></div></div></div>
+      <div class="catalog-grid catalog-grid--projects"><form class="catalog-form" id="project-form"><h3 id="project-form-title">Nova obra</h3><input type="hidden" name="id"><label>Nome da obra<input name="title" required></label><label>Categoria<select name="category"><option value="contencao">Contenção de margem</option><option value="estrutura">Estrutura metálica</option><option value="terraplenagem">Terraplenagem</option><option value="drenagem">Drenagem</option><option value="urbana">Obras urbanas</option></select></label><label>Tipo exibido<input name="type_label"></label><label>Localização<input name="location"></label><label>URL da imagem<input name="image_url" type="url" placeholder="https://..."></label><label>Ordem<input name="sort_order" type="number" value="0"></label><label class="check-label"><input name="active" type="checkbox" checked> Exibir no site</label><div class="form-buttons"><button class="primary-button" type="submit">Salvar obra</button><button class="text-button" id="cancel-project" type="button">Limpar</button></div></form><div><h3>Obras cadastradas</h3><div id="projects-list" class="catalog-list"></div></div></div>
+      <p class="form-message" id="catalog-message" role="status"></p>
+    </section>
+
+    <section class="leads-panel is-hidden" id="leads-panel">
     <div class="summary-grid" aria-label="Resumo das solicitações">
       <article class="summary-card summary-card--total">
         <span>Total recebido</span>
@@ -70,6 +98,7 @@
 
     <p class="form-message" id="dashboard-message" role="status"></p>
     <div class="request-list" id="request-list"></div>
+    </section>
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

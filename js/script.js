@@ -22,13 +22,67 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initSmoothActiveNav();
   initReveal();
-  initPortfolioFilter();
-  initLightbox();
   initForm();
-  initStats();
   initBackToTop();
   document.getElementById('year').textContent = new Date().getFullYear();
+  loadSiteContent().finally(() => {
+    initPortfolioFilter();
+    initLightbox();
+    initStats();
+  });
 });
+
+async function loadSiteContent(){
+  if (!supabaseClient) return;
+  const [contentResult, servicesResult, projectsResult] = await Promise.all([
+    supabaseClient.from('site_content').select('content').eq('id', 'principal').maybeSingle(),
+    supabaseClient.from('services').select('*').eq('active', true).order('sort_order'),
+    supabaseClient.from('projects').select('*').eq('active', true).order('sort_order')
+  ]);
+  if (!contentResult.error && contentResult.data?.content) applySiteContent(contentResult.data.content);
+  if (!servicesResult.error && servicesResult.data?.length) renderServices(servicesResult.data);
+  if (!projectsResult.error && projectsResult.data?.length) renderProjects(projectsResult.data);
+}
+
+function applySiteContent(content){
+  document.querySelectorAll('[data-content]').forEach(element => {
+    const value = content[element.dataset.content];
+    if (value !== undefined && value !== '') element.textContent = value;
+  });
+  if (content.phone){ document.querySelectorAll('a[href^="tel:"]').forEach(link => { link.href = `tel:${content.phone.replace(/\D/g, '')}`; }); }
+  if (content.email){ document.querySelectorAll('a[href^="mailto:"]').forEach(link => { link.href = `mailto:${content.email}`; }); }
+  if (content.whatsapp){ document.querySelectorAll('a[href*="wa.me"]').forEach(link => { link.href = `https://wa.me/${content.whatsapp.replace(/\D/g, '')}`; }); }
+  if (content.instagram){ document.querySelectorAll('a[href*="instagram.com"]').forEach(link => { link.href = content.instagram.startsWith('http') ? content.instagram : `https://instagram.com/${content.instagram.replace('@', '')}`; }); }
+  if (content.hero_image) document.querySelector('.hero__bg').style.backgroundImage = `url("${content.hero_image.replaceAll('"', '')}")`;
+  if (content.about_image) document.querySelector('.sobre__img').style.backgroundImage = `url("${content.about_image.replaceAll('"', '')}")`;
+  if (content.budget_image) document.querySelector('.orcamento__bg').style.backgroundImage = `url("${content.budget_image.replaceAll('"', '')}")`;
+  const stats = document.querySelectorAll('.stat__num:not(.stat__num--text)');
+  [content.stats_works, content.stats_projects, content.stats_people].forEach((value, index) => { if (value !== undefined && stats[index]) stats[index].dataset.count = value; });
+  if (content.stats_area) document.querySelector('.stat__num--text').textContent = content.stats_area;
+}
+
+function renderServices(items){
+  const grid = document.querySelector('#solucoes .cards-grid');
+  grid.replaceChildren();
+  items.forEach(item => {
+    const article = document.createElement('article'); article.className = 's-card';
+    const image = document.createElement('div'); image.className = 's-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title);
+    if (item.image_url) image.style.backgroundImage = `url("${item.image_url.replaceAll('"', '')}")`;
+    const body = document.createElement('div'); body.className = 's-card__body';
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('class', 'icon icon--gold'); icon.setAttribute('viewBox', '0 0 24 24'); const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#${item.icon || 'icon-wall'}`); icon.append(use);
+    const title = document.createElement('h3'); title.textContent = item.title; const description = document.createElement('p'); description.textContent = item.description; body.append(icon, title, description); article.append(image, body); grid.append(article);
+  });
+}
+
+function renderProjects(items){
+  const grid = document.getElementById('portfolio-grid'); const more = document.getElementById('ver-todas'); grid.replaceChildren();
+  items.forEach(item => {
+    const card = document.createElement('button'); card.className = 'p-card'; card.dataset.filter = item.category; card.dataset.title = item.title; card.dataset.type = item.type_label || item.category; card.dataset.location = item.location;
+    const image = document.createElement('span'); image.className = 'p-card__img ph-image'; image.setAttribute('role', 'img'); image.setAttribute('aria-label', item.title); if (item.image_url) image.style.backgroundImage = `url("${item.image_url.replaceAll('"', '')}")`;
+    const info = document.createElement('span'); info.className = 'p-card__info'; const title = document.createElement('strong'); title.textContent = item.title; const detail = document.createElement('small'); detail.textContent = `${item.type_label || item.category} · ${item.location}`; info.append(title, detail); card.append(image, info); grid.append(card);
+  });
+  if (more) grid.append(more);
+}
 
 /* ---------- Header: fundo sólido ao rolar ---------- */
 function initHeader(){
@@ -249,7 +303,7 @@ function initStats(){
     COMPANY_STATS.profissionais
   ];
 
-  nums.forEach((el, i) => el.dataset.count = targets[i] ?? 0);
+  nums.forEach((el, i) => { if (!el.dataset.count) el.dataset.count = targets[i] ?? 0; });
 
   const animate = (el) => {
     const target = parseInt(el.dataset.count, 10) || 0;
