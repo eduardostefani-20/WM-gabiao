@@ -227,18 +227,32 @@ function clearCatalogForm(type){
 }
 
 async function saveCatalog(type, event){
-  event.preventDefault(); const form = event.currentTarget; const values = formDataObject(form); const table = type === 'services' ? 'services' : 'projects'; const payload = { ...values, sort_order: Number(values.sort_order) || 0, active: form.elements.active.checked }; delete payload.id; delete payload.image_file;
+  event.preventDefault(); const form = event.currentTarget; const submit = form.querySelector('[type="submit"]'); const values = formDataObject(form); const table = type === 'services' ? 'services' : 'projects'; const payload = { ...values, sort_order: Number(values.sort_order) || 0, active: form.elements.active.checked }; delete payload.id; delete payload.image_file;
+  if (!form.checkValidity()){ form.reportValidity(); return; }
+  submit.disabled = true; submit.setAttribute('aria-busy', 'true');
   try {
     if (form.elements.image_file.files?.[0]) {
       const file = form.elements.image_file.files[0];
       payload.image_url = await uploadMedia(file);
       payload.media_type = file.type.startsWith('video/') ? 'video' : 'image';
     }
-    const result = values.id ? await supabaseClient.from(table).update(payload).eq('id', values.id) : await supabaseClient.from(table).insert(payload);
-    showMessage(document.getElementById('catalog-message'), result.error ? 'Não foi possível salvar o item.' : 'Item salvo com sucesso.', Boolean(result.error));
+    let result = values.id ? await supabaseClient.from(table).update(payload).eq('id', values.id) : await supabaseClient.from(table).insert(payload);
+    if (result.error && result.error.code === 'PGRST204' && payload.media_type){
+      delete payload.media_type;
+      result = values.id ? await supabaseClient.from(table).update(payload).eq('id', values.id) : await supabaseClient.from(table).insert(payload);
+    }
+    if (result.error){
+      const detail = result.error.message || result.error.details || 'verifique as permissões e o schema do Supabase';
+      showMessage(document.getElementById('catalog-message'), `Não foi possível salvar o ${type === 'services' ? 'serviço' : 'obra'}: ${detail}`, true);
+    } else {
+      showMessage(document.getElementById('catalog-message'), 'Item salvo com sucesso.', false);
+    }
     if (!result.error){ clearCatalogForm(type); loadCatalog(); }
   } catch (error) {
     showMessage(document.getElementById('catalog-message'), error.message || 'Não foi possível enviar a mídia.', true);
+  } finally {
+    submit.disabled = false;
+    submit.removeAttribute('aria-busy');
   }
 }
 
