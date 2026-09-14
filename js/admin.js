@@ -1,6 +1,7 @@
 const SUPABASE_URL = 'https://qaflebsbbmjcmophlkbi.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_3Q5rEIIHV3hrATgSTR0Vaw_fX97rgxm';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const MEDIA_BUCKET = 'site-media';
 
 const loginPanel = document.getElementById('login-panel');
 const dashboard = document.getElementById('dashboard');
@@ -19,6 +20,39 @@ function showMessage(element, message, isError = false){
 
 function formDataObject(form){
   return Object.fromEntries(new FormData(form).entries());
+}
+
+function previewFile(input, preview){
+  const file = input.files?.[0];
+  if (!file) return;
+  const isVideo = file.type.startsWith('video/');
+  if (isVideo && preview.tagName !== 'VIDEO') {
+    const video = document.createElement('video');
+    video.className = preview.className;
+    video.alt = preview.alt;
+    video.controls = true;
+    preview.replaceWith(video);
+    preview = video;
+  } else if (!isVideo && preview.tagName === 'VIDEO') {
+    const image = document.createElement('img');
+    image.className = preview.className;
+    image.alt = preview.alt;
+    preview.replaceWith(image);
+    preview = image;
+  }
+  preview.src = URL.createObjectURL(file);
+  preview.classList.add('is-visible');
+}
+
+async function uploadMedia(file){
+  if (!file) return null;
+  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) throw new Error('Escolha uma imagem ou vídeo válido.');
+  if (file.size > 25 * 1024 * 1024) throw new Error('O arquivo deve ter no máximo 25 MB.');
+  const extension = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+  const path = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabaseClient.storage.from(MEDIA_BUCKET).upload(path, file, { upsert: false, contentType: file.type });
+  if (error) throw error;
+  return supabaseClient.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 function showDashboard(){
@@ -116,7 +150,11 @@ async function loadContent(){
     if (error) return showMessage(document.getElementById('content-message'), 'Não foi possível carregar o conteúdo. Confira o schema e as permissões no Supabase.', true);
     const form = document.getElementById('content-form');
     const content = data?.content || {};
-    Object.entries(content).forEach(([name, value]) => { if (form.elements[name]) form.elements[name].value = value; });
+    Object.entries(content).forEach(([name, value]) => {
+      if (form.elements[name]) form.elements[name].value = value;
+      const preview = form.querySelector(`[data-preview="${name}"]`);
+      if (preview && value) { preview.src = value; preview.classList.add('is-visible'); }
+    });
   } catch (error) {
     showMessage(document.getElementById('content-message'), 'Não foi possível conectar ao conteúdo do site.', true);
   }
@@ -129,7 +167,16 @@ async function saveContent(){
     return;
   }
   try {
-    const { error } = await supabaseClient.from('site_content').upsert({ id: 'principal', content: formDataObject(form), updated_at: new Date().toISOString() });
+    const content = formDataObject(form);
+    for (const input of form.querySelectorAll('[data-upload-field]')) {
+      if (input.files?.[0]) {
+        const file = input.files[0];
+        content[input.dataset.uploadField] = await uploadMedia(file);
+        content[`${input.dataset.uploadField}_type`] = file.type.startsWith('video/') ? 'video' : 'image';
+      }
+      delete content[input.name];
+    }
+    const { error } = await supabaseClient.from('site_content').upsert({ id: 'principal', content, updated_at: new Date().toISOString() });
     showMessage(document.getElementById('content-message'), error ? 'Não foi possível salvar o conteúdo.' : 'Conteúdo salvo. Atualize o site público para ver as alterações.', Boolean(error));
   } catch (error) {
     showMessage(document.getElementById('content-message'), 'Não foi possível conectar ao banco para salvar.', true);
@@ -170,6 +217,8 @@ function renderCatalog(type){
 function fillCatalogForm(type, item){
   const form = document.getElementById(type === 'services' ? 'service-form' : 'project-form');
   Object.entries(item).forEach(([key, value]) => { if (!form.elements[key]) return; if (form.elements[key].type === 'checkbox') form.elements[key].checked = value; else form.elements[key].value = value ?? ''; });
+  const preview = form.querySelector('.media-preview');
+  if (preview && item.image_url) { preview.src = item.image_url; preview.classList.add('is-visible'); }
   document.getElementById(type === 'services' ? 'service-form-title' : 'project-form-title').textContent = type === 'services' ? 'Editar serviço' : 'Editar obra';
 }
 
@@ -178,10 +227,19 @@ function clearCatalogForm(type){
 }
 
 async function saveCatalog(type, event){
-  event.preventDefault(); const form = event.currentTarget; const values = formDataObject(form); const table = type === 'services' ? 'services' : 'projects'; const payload = { ...values, sort_order: Number(values.sort_order) || 0, active: form.elements.active.checked }; delete payload.id;
-  const result = values.id ? await supabaseClient.from(table).update(payload).eq('id', values.id) : await supabaseClient.from(table).insert(payload);
-  showMessage(document.getElementById('catalog-message'), result.error ? 'Não foi possível salvar o item.' : 'Item salvo com sucesso.', Boolean(result.error));
-  if (!result.error){ clearCatalogForm(type); loadCatalog(); }
+  event.preventDefault(); const form = event.currentTarget; const values = formDataObject(form); const table = type === 'services' ? 'services' : 'projects'; const payload = { ...values, sort_order: Number(values.sort_order) || 0, active: form.elements.active.checked }; delete payload.id; delete payload.image_file;
+  try {
+    if (form.elements.image_file.files?.[0]) {
+      const file = form.elements.image_file.files[0];
+      payload.image_url = await uploadMedia(file);
+      payload.media_type = file.type.startsWith('video/') ? 'video' : 'image';
+    }
+    const result = values.id ? await supabaseClient.from(table).update(payload).eq('id', values.id) : await supabaseClient.from(table).insert(payload);
+    showMessage(document.getElementById('catalog-message'), result.error ? 'Não foi possível salvar o item.' : 'Item salvo com sucesso.', Boolean(result.error));
+    if (!result.error){ clearCatalogForm(type); loadCatalog(); }
+  } catch (error) {
+    showMessage(document.getElementById('catalog-message'), error.message || 'Não foi possível enviar a mídia.', true);
+  }
 }
 
 async function deleteCatalog(type, item){
@@ -197,6 +255,9 @@ document.getElementById('service-form').addEventListener('submit', event => save
 document.getElementById('project-form').addEventListener('submit', event => saveCatalog('projects', event));
 document.getElementById('cancel-service').addEventListener('click', () => clearCatalogForm('services'));
 document.getElementById('cancel-project').addEventListener('click', () => clearCatalogForm('projects'));
+document.querySelectorAll('input[type="file"]').forEach(input => {
+  input.addEventListener('change', () => previewFile(input, input.closest('label').querySelector('.media-preview')));
+});
 document.getElementById('search-input').addEventListener('input', renderRequests);
 document.getElementById('status-filter').addEventListener('change', renderRequests);
 document.getElementById('refresh-button').addEventListener('click', loadRequests);

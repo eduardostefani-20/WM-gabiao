@@ -54,7 +54,9 @@ O formulário salva as solicitações no Supabase. O painel administrativo está
 4. Acesse `admin.html` e entre com esse usuário.
 5. No painel, use as abas **Conteúdo do site** e **Serviços e obras** para atualizar o site. As alterações aparecem no site público após recarregar a página.
 
-O campo de imagem aceita uma URL pública. Para usar imagens próprias, hospede-as no Storage do Supabase ou em outro serviço público e cole a URL no painel. Não use uma chave `service_role` no frontend.
+6. O painel permite escolher fotos ou vídeos diretamente do computador. O arquivo é enviado para o bucket `site-media` e a URL é salva automaticamente. O limite é de 25 MB por arquivo.
+
+Também é possível colar uma URL pública. Não use uma chave `service_role` no frontend.
 
 A chave usada no frontend é uma chave publicável. Nunca coloque uma chave `service_role` no HTML ou JavaScript.
 
