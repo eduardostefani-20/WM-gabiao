@@ -100,54 +100,26 @@ input,select,textarea{font:inherit;}
 .icon--gold{color:var(--c-gold);}
 .icon--lg{width:34px;height:34px;}
 
-/* Placeholder de imagem — textura de gabião em CSS (substituir por foto real) */
+/* Fundo de imagem: textura escura de gabião enquanto a foto carrega
+   (a foto é definida via style="background-image" no HTML ou pelo JS). */
 .ph-image{
   display:block;
   position:relative;
   background-color:var(--c-gray-dark);
   background-image:
-    radial-gradient(circle at 15% 25%, rgba(255,255,255,.10) 0 3px, transparent 4px),
-    radial-gradient(circle at 45% 60%, rgba(255,255,255,.08) 0 4px, transparent 5px),
-    radial-gradient(circle at 75% 30%, rgba(255,255,255,.09) 0 3px, transparent 4px),
-    radial-gradient(circle at 85% 75%, rgba(255,255,255,.07) 0 5px, transparent 6px),
-    radial-gradient(circle at 30% 85%, rgba(255,255,255,.08) 0 4px, transparent 5px),
     repeating-linear-gradient(45deg, rgba(216,167,45,.10) 0 2px, transparent 2px 28px),
     repeating-linear-gradient(-45deg, rgba(216,167,45,.10) 0 2px, transparent 2px 28px),
     linear-gradient(160deg, #232F34, #11171A);
-  background-size:auto,auto,auto,auto,auto,auto,auto,cover;
+  background-size:cover;
+  background-position:center;
   overflow:hidden;
 }
-.ph-image::after{
-  content:"Foto ilustrativa — substituir";
-  position:absolute;
-  right:10px;
-  bottom:10px;
-  font-family:var(--font-body);
-  font-size:10px;
-  letter-spacing:.02em;
-  color:rgba(255,255,255,.55);
-  background:rgba(0,0,0,.35);
-  padding:4px 8px;
-  border-radius:3px;
-  pointer-events:none;
-}
 
-/* Fotos reais fornecidas pela empresa */
-.s-card:nth-child(1) .s-card__img{background-image:url("../assets/images/Gabion_retaining_wall_stabilizin%E2%80%A6_2K_20260913135247.jpeg");background-size:cover;background-position:center;}
-.s-card:nth-child(2) .s-card__img{background-image:url("../assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg");background-size:cover;background-position:center;}
-.s-card:nth-child(3) .s-card__img{background-image:url("../assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg");background-size:cover;background-position:center;}
-.s-card:nth-child(4) .s-card__img{background-image:url("../assets/images/Gabion_structure_with_stones_2K_20260913135215.jpeg");background-size:cover;background-position:center;}
-.s-card:nth-child(5) .s-card__img{background-image:url("../assets/images/images%20(2).jpeg");background-size:cover;background-position:center;}
-.p-card:nth-child(1) .p-card__img{background-image:url("../assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg");background-size:cover;background-position:center;}
-.p-card:nth-child(2) .p-card__img{background-image:url("../assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg");background-size:cover;background-position:center;}
-.p-card:nth-child(3) .p-card__img{background-image:url("../assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg");background-size:cover;background-position:center;}
-.p-card:nth-child(4) .p-card__img{background-image:url("../assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg");background-size:cover;background-position:center;}
-.p-card:nth-child(5) .p-card__img{background-image:url("../assets/images/images%20(1).jpeg");background-size:cover;background-position:center;}
-.atuacao__img{background-image:url("../assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg");background-size:cover;background-position:center;}
-.sobre__img{background-image:url("../assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg");background-size:cover;background-position:center 35%;}
-.orcamento__bg{background-image:url("../assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg");background-size:cover;background-position:center;}
-.s-card__img::after,.p-card__img::after,.atuacao__img::after,.sobre__img::after,.orcamento__bg::after{display:none;}
-.lightbox__img{background-size:cover;background-position:center;}
+/* Imagens fixas das seções */
+.hero__bg{background-image:url("../assets/images/hero.jpg");}
+.atuacao__img{background-image:url("../assets/images/drenagem-erosao.jpg");}
+.sobre__img{background-image:url("../assets/images/equipe-engenharia.jpg");background-position:center 35%;}
+.orcamento__bg{background-image:url("../assets/images/terraplenagem.jpg");}
 
 /* ---------- Reveal on scroll ---------- */
 [data-reveal]{
@@ -188,8 +160,6 @@ input,select,textarea{font:inherit;}
 .logo{display:flex;align-items:center;line-height:1;}
 .logo__image{display:block;width:220px;height:70px;object-fit:contain;padding:4px 10px;filter:drop-shadow(0 0 2px rgba(255,255,255,.8));}
 .logo--footer .logo__image{width:190px;height:64px;}
-.logo__wm{font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--c-white);letter-spacing:.02em;}
-.logo__gabiao{font-family:var(--font-display);font-weight:700;font-size:11px;color:var(--c-gold);letter-spacing:.14em;}
 
 .nav__list{display:flex;gap:36px;}
 .nav__link{
@@ -262,7 +232,7 @@ input,select,textarea{font:inherit;}
   align-items:flex-end;
   overflow:hidden;
 }
-.hero__bg{position:absolute;inset:0;background-image:url("../assets/images/ChatGPT%20Image%2013%20de%20set.%20de%202026,%2013_39_36.png");background-size:cover;background-position:center;}
+.hero__bg{position:absolute;inset:0;background-size:cover;background-position:center;}
 .hero__overlay{
   position:absolute;inset:0;
   background:
@@ -563,8 +533,9 @@ input,select,textarea{font:inherit;}
 .form__field.has-error textarea{border-color:#B3261E;}
 .form__field.has-error .form__error{display:block;}
 .form__submit{justify-content:center;margin-top:6px;}
-.form__success{font-size:13.5px;color:#2E7D32;display:none;}
-.form__success.is-visible{display:block;}
+.form__feedback{font-size:13.5px;color:#2E7D32;display:none;}
+.form__feedback.is-error{color:#B3261E;}
+.form__feedback.is-visible{display:block;}
 
 /* ==========================================================================
    CONTATO
