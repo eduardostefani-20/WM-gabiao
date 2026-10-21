@@ -106,14 +106,14 @@ insert into public.site_content (id, content)
 values ('principal', jsonb_build_object(
   'hero_title', 'Soluções em engenharia e construção para obras que precisam de resistência.',
   'hero_text', 'Atuamos com gabiões, estruturas metálicas, terraplenagem, drenagem e infraestrutura, entregando segurança, qualidade e resultados para o seu projeto.',
-  'hero_image', 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg',
+  'hero_image', 'assets/images/hero.jpg',
   'services_title', 'Nossas soluções',
   'about_title', 'Mais que obras, entregamos soluções.',
   'about_text', 'A WM Gabião atua no segmento de engenharia e construção com foco em soluções de contenção, drenagem, terraplenagem, estruturas metálicas e infraestrutura. Ativa desde 23/05/2023, somos uma microempresa com atuação em todo o Brasil. Nosso compromisso é transformar projetos em resultados concretos, com qualidade, segurança e responsabilidade.',
-  'about_image', 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg',
+  'about_image', 'assets/images/equipe-engenharia.jpg',
   'budget_title', 'Vamos conversar sobre seu projeto?',
   'budget_text', 'Preencha o formulário e nossa equipe entrará em contato para entender sua necessidade e avaliar a melhor solução.',
-  'budget_image', 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg',
+  'budget_image', 'assets/images/terraplenagem.jpg',
   'footer_text', 'Soluções em engenharia e construção para obras que precisam de resistência.',
   'phone', '(15) 99116-7340', 'email', 'eduatdo.oliveira222220@gmail.com', 'location', 'Atendimento em todo o Brasil', 'hours', '24 horas',
   'whatsapp', '5515991167340', 'instagram', 'wmgabiao', 'stats_works', '25', 'stats_projects', '25', 'stats_people', '6', 'stats_area', 'Brasil inteiro'
@@ -133,11 +133,11 @@ where not exists (select 1 from public.services);
 
 -- Mantém as imagens locais do site também para registros já existentes.
 update public.services set image_url = case title
-  when 'Contenção e estabilização' then 'assets/images/Gabion_retaining_wall_stabilizin%E2%80%A6_2K_20260913135247.jpeg'
-  when 'Drenagem e controle de erosão' then 'assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg'
-  when 'Terraplenagem' then 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg'
-  when 'Estruturas metálicas' then 'assets/images/Gabion_structure_with_stones_2K_20260913135215.jpeg'
-  when 'Infraestrutura' then 'assets/images/images%20(2).jpeg'
+  when 'Contenção e estabilização' then 'assets/images/muro-contencao.jpg'
+  when 'Drenagem e controle de erosão' then 'assets/images/drenagem-erosao.jpg'
+  when 'Terraplenagem' then 'assets/images/terraplenagem.jpg'
+  when 'Estruturas metálicas' then 'assets/images/estrutura-gabiao.jpg'
+  when 'Infraestrutura' then 'assets/images/infraestrutura.jpg'
   else image_url
 end
 where title in ('Contenção e estabilização', 'Drenagem e controle de erosão', 'Terraplenagem', 'Estruturas metálicas', 'Infraestrutura')
@@ -155,12 +155,38 @@ from (values
 where not exists (select 1 from public.projects);
 
 update public.projects set image_url = case title
-  when 'Projeto de contenção de margem' then 'assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg'
-  when 'Estrutura metálica industrial' then 'assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg'
-  when 'Preparação e nivelamento de terreno' then 'assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg'
-  when 'Drenagem e controle de erosão' then 'assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg'
-  when 'Infraestrutura urbana' then 'assets/images/images%20(1).jpeg'
+  when 'Projeto de contenção de margem' then 'assets/images/contencao-margem.jpg'
+  when 'Estrutura metálica industrial' then 'assets/images/equipe-engenharia.jpg'
+  when 'Preparação e nivelamento de terreno' then 'assets/images/terraplenagem.jpg'
+  when 'Drenagem e controle de erosão' then 'assets/images/drenagem-erosao.jpg'
+  when 'Infraestrutura urbana' then 'assets/images/infraestrutura-urbana.jpg'
   else image_url
 end
 where title in ('Projeto de contenção de margem', 'Estrutura metálica industrial', 'Preparação e nivelamento de terreno', 'Drenagem e controle de erosão', 'Infraestrutura urbana')
   and coalesce(image_url, '') = '';
+
+-- Migração: as imagens foram renomeadas (nomes sem espaços e caracteres especiais).
+-- Atualiza registros antigos que ainda apontam para os nomes anteriores.
+create temporary table if not exists image_renames (old_path text primary key, new_path text not null);
+insert into image_renames (old_path, new_path) values
+  ('assets/images/Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg', 'assets/images/contencao-margem.jpg'),
+  ('assets/images/Engineering_team_at_construction%E2%80%A6_2K_20260913135158.jpeg', 'assets/images/equipe-engenharia.jpg'),
+  ('assets/images/Infrastructure_construction_proj%E2%80%A6_2K_20260913135230.jpeg', 'assets/images/terraplenagem.jpg'),
+  ('assets/images/Gabion_retaining_wall_stabilizin%E2%80%A6_2K_20260913135247.jpeg', 'assets/images/muro-contencao.jpg'),
+  ('assets/images/Gabion_drainage_erosion_control_%E2%80%A6_2K_20260913135256.jpeg', 'assets/images/drenagem-erosao.jpg'),
+  ('assets/images/Gabion_structure_with_stones_2K_20260913135215.jpeg', 'assets/images/estrutura-gabiao.jpg'),
+  ('assets/images/images%20(2).jpeg', 'assets/images/infraestrutura.jpg'),
+  ('assets/images/images%20(1).jpeg', 'assets/images/infraestrutura-urbana.jpg'),
+  ('assets/images/ChatGPT%20Image%2013%20de%20set.%20de%202026,%2013_39_36.png', 'assets/images/hero.jpg')
+on conflict do nothing;
+
+update public.services s set image_url = r.new_path from image_renames r where s.image_url = r.old_path;
+update public.projects p set image_url = r.new_path from image_renames r where p.image_url = r.old_path;
+update public.site_content c
+set content = c.content
+  || coalesce((select jsonb_build_object('hero_image', r.new_path) from image_renames r where r.old_path = c.content->>'hero_image'), '{}'::jsonb)
+  || coalesce((select jsonb_build_object('about_image', r.new_path) from image_renames r where r.old_path = c.content->>'about_image'), '{}'::jsonb)
+  || coalesce((select jsonb_build_object('budget_image', r.new_path) from image_renames r where r.old_path = c.content->>'budget_image'), '{}'::jsonb)
+where c.id = 'principal';
+
+drop table if exists image_renames;
