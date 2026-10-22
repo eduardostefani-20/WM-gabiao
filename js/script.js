@@ -1,205 +1,303 @@
 /* ==========================================================================
    WM GABIÃO — script.js
-   Depende de js/config.js (supabaseClient).
+   Depende de js/config.js (supabaseClient) e js/data.js (conteúdo padrão).
    ========================================================================== */
 
-const IMAGES_DIR = 'assets/images/';
-
-// Imagem padrão de cada serviço/obra, usada quando o banco não informa uma.
-const DEFAULT_IMAGES = {
-  'Contenção e estabilização': 'muro-contencao.jpg',
-  'Drenagem e controle de erosão': 'drenagem-erosao.jpg',
-  'Terraplenagem': 'terraplenagem.jpg',
-  'Estruturas metálicas': 'estrutura-gabiao.jpg',
-  'Infraestrutura': 'infraestrutura.jpg',
-  'Projeto de contenção de margem': 'contencao-margem.jpg',
-  'Estrutura metálica industrial': 'equipe-engenharia.jpg',
-  'Preparação e nivelamento de terreno': 'terraplenagem.jpg',
-  'Infraestrutura urbana': 'infraestrutura-urbana.jpg'
+const site = {
+  content: { ...DEFAULT_CONTENT },
+  projects: DEFAULT_PROJECTS,
+  clients: DEFAULT_CLIENTS
 };
 
-// Nomes antigos das imagens que ainda podem estar salvos no banco.
-const LEGACY_IMAGES = {
-  'ChatGPT Image 13 de set. de 2026, 13_39_36.png': 'hero.jpg',
-  'Engineering_team_at_construction…_2K_20260913135158.jpeg': 'equipe-engenharia.jpg',
-  'Gabion_drainage_erosion_control_…_2K_20260913135256.jpeg': 'drenagem-erosao.jpg',
-  'Gabion_retaining_project_in_Brazil_2K_20260913135240.jpeg': 'contencao-margem.jpg',
-  'Gabion_retaining_wall_stabilizin…_2K_20260913135247.jpeg': 'muro-contencao.jpg',
-  'Gabion_structure_with_stones_2K_20260913135215.jpeg': 'estrutura-gabiao.jpg',
-  'Infrastructure_construction_proj…_2K_20260913135230.jpeg': 'terraplenagem.jpg',
-  'images (1).jpeg': 'infraestrutura-urbana.jpg',
-  'images (2).jpeg': 'infraestrutura.jpg'
-};
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initHeader();
   initMobileMenu();
   initActiveNav();
-  initReveal();
   initForm();
-  initBackToTop();
-  initPortfolioFilter();
-  initLightbox();
+  initModal();
+  initPdfDownload();
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // Os contadores esperam o banco, que pode trazer números atualizados.
-  loadSiteContent().finally(initStats);
+  renderAll();
+  initReveal();
+  initStats();
+  loadFromDatabase();
 });
 
 /* ==========================================================================
-   CONTEÚDO DINÂMICO (Supabase)
-   O HTML já traz o conteúdo padrão; o banco apenas sobrescreve o que tiver.
+   DADOS (Supabase)
    ========================================================================== */
 
-async function loadSiteContent(){
+async function loadFromDatabase(){
   if (!supabaseClient) return;
   try {
-    const [content, services, projects] = await Promise.all([
+    const [content, projects, clients] = await Promise.all([
       supabaseClient.from('site_content').select('content').eq('id', 'principal').maybeSingle(),
-      supabaseClient.from('services').select('*').eq('active', true).order('sort_order'),
-      supabaseClient.from('projects').select('*').eq('active', true).order('sort_order')
+      supabaseClient.from('portfolio_projects').select('*').eq('active', true).order('sort_order'),
+      supabaseClient.from('clients').select('*').eq('active', true).order('sort_order')
     ]);
-    if (!content.error && content.data?.content) applySiteContent(content.data.content);
-    if (!services.error && services.data?.length) renderServices(services.data);
-    if (!projects.error && projects.data?.length) renderProjects(projects.data);
+    let changed = false;
+    if (!content.error && content.data?.content) {
+      Object.entries(content.data.content).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) site.content[key] = value;
+      });
+      changed = true;
+    }
+    if (!projects.error && projects.data?.length) { site.projects = projects.data; changed = true; }
+    if (!clients.error && clients.data?.length) { site.clients = clients.data; changed = true; }
+    if (changed) renderAll();
   } catch {
-    // Sem conexão com o banco: mantém o conteúdo padrão do HTML.
+    // Sem conexão com o banco: mantém o conteúdo padrão.
   }
 }
 
-/* Converte caminhos antigos para os nomes atuais dos arquivos. */
-function resolveImage(url){
-  if (!url) return '';
-  const fileName = decodeURIComponent(url.split('/').pop());
-  if (url.startsWith(IMAGES_DIR) && LEGACY_IMAGES[fileName]) return IMAGES_DIR + LEGACY_IMAGES[fileName];
-  return url;
-}
+/* ==========================================================================
+   RENDERIZAÇÃO
+   ========================================================================== */
 
-function setBackgroundImage(element, url){
-  const resolved = resolveImage(url);
-  if (element && resolved) element.style.backgroundImage = `url("${resolved.replaceAll('"', '')}")`;
-}
-
-function imageFor(item){
-  if (item.image_url) return item.image_url;
-  return DEFAULT_IMAGES[item.title] ? IMAGES_DIR + DEFAULT_IMAGES[item.title] : '';
+function renderAll(){
+  applyContent();
+  renderSolutions();
+  renderProjects();
+  renderClients();
 }
 
 function onlyDigits(value){
-  return String(value).replace(/\D/g, '');
+  return String(value || '').replace(/\D/g, '');
 }
 
-function applySiteContent(content){
-  document.querySelectorAll('[data-content]').forEach(element => {
-    const value = content[element.dataset.content];
-    if (value === undefined || value === '') return;
+function cssUrl(url){
+  return `url("${String(url).replaceAll('"', '')}")`;
+}
 
-    // O título do hero mantém a palavra em destaque (<span class="text-gold">).
-    const emphasis = element.dataset.content === 'hero_title' && element.querySelector('.text-gold');
-    if (emphasis) {
-      element.firstChild.textContent = `${value.replace(emphasis.textContent, '').trimEnd()} `;
-    } else {
-      element.textContent = value;
-    }
+function applyContent(){
+  const content = site.content;
+  document.querySelectorAll('[data-text]').forEach(element => { element.textContent = content[element.dataset.text] ?? ''; });
+  document.querySelectorAll('[data-image]').forEach(element => {
+    const url = content[element.dataset.image];
+    if (url) element.style.backgroundImage = cssUrl(url);
+  });
+  document.querySelectorAll('[data-count]').forEach(element => {
+    element.dataset.target = content[element.dataset.count] || '0';
+    if (!element.textContent) element.textContent = element.dataset.target;
   });
 
-  const setLinks = (selector, href) => document.querySelectorAll(selector).forEach(link => { link.href = href; });
-  if (content.phone) setLinks('a[href^="tel:"]', `tel:${onlyDigits(content.phone)}`);
-  if (content.email) setLinks('a[href^="mailto:"]', `mailto:${content.email}`);
-  if (content.whatsapp) setLinks('a[href*="wa.me"]', `https://wa.me/${onlyDigits(content.whatsapp)}`);
-  if (content.instagram) {
-    const instagram = content.instagram.startsWith('http')
-      ? content.instagram
-      : `https://instagram.com/${content.instagram.replace('@', '')}`;
-    setLinks('a[href*="instagram.com"]', instagram);
-  }
-
-  setBackgroundImage(document.querySelector('.hero__bg'), content.hero_image);
-  setBackgroundImage(document.querySelector('.sobre__img'), content.about_image);
-  setBackgroundImage(document.querySelector('.orcamento__bg'), content.budget_image);
-
-  const statNumbers = document.querySelectorAll('.stat__num[data-count]');
-  [content.stats_works, content.stats_projects, content.stats_people].forEach((value, index) => {
-    if (value !== undefined && statNumbers[index]) statNumbers[index].dataset.count = value;
+  const instagram = content.instagram?.startsWith('http')
+    ? content.instagram
+    : `https://instagram.com/${String(content.instagram || '').replace('@', '')}`;
+  const links = {
+    '[data-whatsapp]': `https://wa.me/${onlyDigits(content.whatsapp)}`,
+    '[data-tel]': `tel:+${onlyDigits(content.whatsapp)}`,
+    '[data-mail]': `mailto:${content.email}`,
+    '[data-instagram]': instagram
+  };
+  Object.entries(links).forEach(([selector, href]) => {
+    document.querySelectorAll(selector).forEach(link => {
+      link.href = href;
+      if (href.startsWith('http')) { link.target = '_blank'; link.rel = 'noopener'; }
+    });
   });
-  if (content.stats_area) document.querySelector('.stat__num--text').textContent = content.stats_area;
 }
 
-function createIcon(iconId){
-  const svgNs = 'http://www.w3.org/2000/svg';
-  const icon = document.createElementNS(svgNs, 'svg');
-  icon.setAttribute('class', 'icon icon--gold');
-  icon.setAttribute('viewBox', '0 0 24 24');
-  icon.setAttribute('aria-hidden', 'true');
-  const use = document.createElementNS(svgNs, 'use');
-  use.setAttribute('href', `#${iconId}`);
-  icon.append(use);
-  return icon;
+function createElement(tag, className, text){
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
 }
 
-function renderServices(items){
-  const grid = document.querySelector('#solucoes .cards-grid');
-  grid.replaceChildren(...items.map(item => {
-    const card = document.createElement('article');
-    card.className = 's-card';
+function pad(number){
+  return String(number).padStart(2, '0');
+}
 
-    const image = document.createElement('div');
-    image.className = 's-card__img ph-image';
-    image.setAttribute('role', 'img');
-    image.setAttribute('aria-label', item.title);
-    setBackgroundImage(image, imageFor(item));
-
-    const body = document.createElement('div');
-    body.className = 's-card__body';
-    const title = document.createElement('h3');
-    title.textContent = item.title;
-    const description = document.createElement('p');
-    description.textContent = item.description;
-    body.append(createIcon(item.icon || 'icon-wall'), title, description);
-
-    card.append(image, body);
+function renderSolutions(){
+  const grid = document.getElementById('solutions-grid');
+  grid.replaceChildren(...DEFAULT_SOLUTIONS.map((solution, index) => {
+    const card = createElement('article', 'solution');
+    card.append(
+      createElement('span', 'solution__number', pad(index + 1)),
+      createElement('h3', '', solution.title),
+      createElement('p', '', solution.text)
+    );
     return card;
   }));
 }
 
-function renderProjects(items){
-  const grid = document.getElementById('portfolio-grid');
-  const moreLink = document.getElementById('ver-todas');
+function projectImages(project){
+  return Array.isArray(project.images) ? project.images.filter(Boolean) : [];
+}
 
-  const cards = items.map(item => {
-    const typeLabel = item.type_label || item.category;
-    const card = document.createElement('button');
+function renderProjects(){
+  const grid = document.getElementById('projects-grid');
+  const cards = site.projects.map((project, index) => {
+    const card = createElement('button', 'project');
     card.type = 'button';
-    card.className = 'p-card';
-    Object.assign(card.dataset, { filter: item.category, title: item.title, type: typeLabel, location: item.location });
+    card.dataset.index = index;
+    card.dataset.system = project.system;
 
-    const image = document.createElement('span');
-    image.className = 'p-card__img ph-image';
-    image.setAttribute('role', 'img');
-    image.setAttribute('aria-label', item.title);
-    setBackgroundImage(image, imageFor(item));
+    const image = createElement('img', 'project__image');
+    image.src = projectImages(project)[0] || '';
+    image.alt = project.title;
+    image.loading = 'lazy';
 
-    const info = document.createElement('span');
-    info.className = 'p-card__info';
-    const title = document.createElement('strong');
-    title.textContent = item.title;
-    const detail = document.createElement('small');
-    detail.textContent = `${typeLabel} · ${item.location}`;
-    info.append(title, detail);
+    const info = createElement('span', 'project__info');
+    info.append(
+      createElement('span', 'project__system', project.system),
+      createElement('span', 'project__title', project.title),
+      createElement('span', 'project__location', project.location)
+    );
 
-    card.append(image, info);
+    card.append(
+      image,
+      createElement('span', 'project__shade'),
+      createElement('span', 'project__number', pad(index + 1)),
+      createElement('span', 'project__more', '+'),
+      info
+    );
     return card;
   });
+  grid.replaceChildren(...cards);
+  renderFilters();
+}
 
-  grid.replaceChildren(...cards, ...(moreLink ? [moreLink] : []));
-  applyPortfolioFilter(document.querySelector('.filter.is-active')?.dataset.filter || 'todos');
+function renderFilters(){
+  const container = document.getElementById('portfolio-filters');
+  const systems = ['Todos', ...new Set(site.projects.map(project => project.system).filter(Boolean))];
+  container.replaceChildren(...systems.map((system, index) => {
+    const button = createElement('button', `filter${index === 0 ? ' is-active' : ''}`, system);
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      container.querySelectorAll('.filter').forEach(item => item.classList.toggle('is-active', item === button));
+      document.querySelectorAll('.project').forEach(card => {
+        card.classList.toggle('is-hidden', index !== 0 && card.dataset.system !== system);
+      });
+    });
+    return button;
+  }));
+}
+
+function initials(name){
+  const words = name.split(/\s+/).filter(word => word.length > 2 || /\d/.test(word));
+  // Siglas como "V4" ou "TRM" ficam inteiras.
+  if (/^[A-Z0-9]{2,3}$/.test(words[0])) return words[0];
+  return (words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)).toUpperCase();
+}
+
+function renderClients(){
+  const track = document.getElementById('clients-track');
+  const createClient = client => {
+    const item = createElement('figure', 'client');
+    const logoBox = createElement('span', 'client__logo');
+    if (client.logo_url) {
+      const logo = createElement('img');
+      logo.src = client.logo_url;
+      logo.alt = '';
+      logo.loading = 'lazy';
+      logoBox.append(logo);
+    } else {
+      logoBox.append(createElement('span', 'client__monogram', initials(client.name)));
+    }
+    item.append(logoBox, createElement('figcaption', 'client__name', client.name));
+    return item;
+  };
+  // A lista é duplicada para a faixa girar sem emendas.
+  const items = [...site.clients, ...site.clients].map(createClient);
+  items.slice(site.clients.length).forEach(item => item.setAttribute('aria-hidden', 'true'));
+  track.replaceChildren(...items);
 }
 
 /* ==========================================================================
-   NAVEGAÇÃO
+   MODAL DA OBRA
    ========================================================================== */
 
-/* Header com fundo sólido ao rolar */
+function initModal(){
+  const modal = document.getElementById('project-modal');
+  const mainImage = document.getElementById('modal-image');
+  const thumbs = document.getElementById('modal-thumbs');
+  let lastFocused = null;
+
+  const showImage = (url, button) => {
+    mainImage.src = url;
+    thumbs.querySelectorAll('button').forEach(item => item.classList.toggle('is-active', item === button));
+  };
+
+  const open = (project, trigger) => {
+    lastFocused = trigger;
+    const images = projectImages(project);
+    document.getElementById('modal-system').textContent = project.system;
+    document.getElementById('modal-title').textContent = project.title;
+    document.getElementById('modal-location').textContent = project.location;
+    document.getElementById('modal-clients').textContent = project.clients;
+    document.getElementById('modal-clients-row').hidden = !project.clients;
+    document.getElementById('modal-description').textContent = project.description;
+    mainImage.alt = project.title;
+
+    thumbs.replaceChildren(...(images.length > 1 ? images : []).map(url => {
+      const button = createElement('button');
+      button.type = 'button';
+      button.setAttribute('aria-label', 'Ver foto');
+      const image = createElement('img');
+      image.src = url;
+      image.alt = '';
+      button.append(image);
+      button.addEventListener('click', () => showImage(url, button));
+      return button;
+    }));
+    showImage(images[0] || '', thumbs.firstElementChild);
+
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('.modal__close').focus();
+  };
+
+  const close = () => {
+    if (!modal.classList.contains('is-open')) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    lastFocused?.focus();
+  };
+
+  document.getElementById('projects-grid').addEventListener('click', event => {
+    const card = event.target.closest('.project');
+    if (card) open(site.projects[card.dataset.index], card);
+  });
+  modal.querySelectorAll('[data-close]').forEach(element => element.addEventListener('click', close));
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+}
+
+/* ==========================================================================
+   PORTFÓLIO EM PDF
+   ========================================================================== */
+
+function initPdfDownload(){
+  const button = document.getElementById('download-pdf');
+  const label = button.lastChild;
+  const originalText = label.textContent;
+
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await PdfPortfolio.generate({
+        content: site.content,
+        projects: site.projects.filter(project => projectImages(project).length),
+        clients: site.clients,
+        onProgress: step => { label.textContent = ` Gerando PDF — ${step}...`; }
+      });
+      label.textContent = originalText;
+    } catch {
+      label.textContent = ' Não foi possível gerar o PDF. Tente novamente.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+/* ==========================================================================
+   NAVEGAÇÃO E ANIMAÇÕES
+   ========================================================================== */
+
 function initHeader(){
   const header = document.getElementById('header');
   const update = () => header.classList.toggle('is-scrolled', window.scrollY > 40);
@@ -207,58 +305,32 @@ function initHeader(){
   window.addEventListener('scroll', update, { passive: true });
 }
 
-/* Menu mobile */
 function initMobileMenu(){
   const button = document.getElementById('hamburger');
   const menu = document.getElementById('mobile-menu');
-
   const setOpen = isOpen => {
     menu.classList.toggle('is-open', isOpen);
     button.setAttribute('aria-expanded', String(isOpen));
     button.setAttribute('aria-label', isOpen ? 'Fechar menu' : 'Abrir menu');
+    document.body.style.overflow = isOpen ? 'hidden' : '';
   };
-
   button.addEventListener('click', () => setOpen(!menu.classList.contains('is-open')));
   menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setOpen(false)));
   document.addEventListener('keydown', event => { if (event.key === 'Escape') setOpen(false); });
 }
 
-/* Link do menu ativo conforme a seção visível */
 function initActiveNav(){
   const links = document.querySelectorAll('.nav__link');
-  const sections = Array.from(links)
-    .map(link => document.querySelector(link.getAttribute('href')))
-    .filter(Boolean);
-  if (!sections.length) return;
-
+  const sections = Array.from(links).map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const id = `#${entry.target.id}`;
-      links.forEach(link => link.classList.toggle('is-active', link.getAttribute('href') === id));
+      links.forEach(link => link.classList.toggle('is-active', link.getAttribute('href') === `#${entry.target.id}`));
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
-
   sections.forEach(section => observer.observe(section));
 }
 
-/* Botão voltar ao topo */
-function initBackToTop(){
-  const button = document.getElementById('back-to-top');
-  if (!button) return;
-
-  window.addEventListener('scroll', () => {
-    button.classList.toggle('is-visible', window.scrollY > 600);
-  }, { passive: true });
-
-  button.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-}
-
-/* ==========================================================================
-   ANIMAÇÕES
-   ========================================================================== */
-
-/* Executa o callback uma única vez quando o elemento aparece na tela. */
 function onceVisible(elements, callback, threshold){
   if (!('IntersectionObserver' in window)) {
     elements.forEach(callback);
@@ -275,89 +347,21 @@ function onceVisible(elements, callback, threshold){
 }
 
 function initReveal(){
-  onceVisible(document.querySelectorAll('[data-reveal]'), element => element.classList.add('is-visible'), 0.15);
+  onceVisible(document.querySelectorAll('[data-reveal]'), element => element.classList.add('is-visible'), 0.12);
 }
 
-/* Contadores da seção Sobre (valores em data-count no HTML ou vindos do banco) */
 function initStats(){
   const animate = element => {
-    const target = parseInt(element.dataset.count, 10) || 0;
-    const duration = 900;
+    const target = parseInt(element.dataset.target, 10) || 0;
     const start = performance.now();
-
     const step = now => {
-      const progress = Math.min((now - start) / duration, 1);
-      element.textContent = `+ ${Math.floor(progress * target)}`;
+      const progress = Math.min((now - start) / 1200, 1);
+      element.textContent = Math.round(target * (1 - Math.pow(1 - progress, 3)));
       if (progress < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
   };
-
-  onceVisible(document.querySelectorAll('.stat__num[data-count]'), animate, 0.5);
-}
-
-/* ==========================================================================
-   OBRAS — filtro e lightbox
-   ========================================================================== */
-
-/* Usa delegação de eventos: funciona também com os cards recriados pelo banco. */
-function applyPortfolioFilter(value){
-  document.querySelectorAll('.p-card[data-filter]').forEach(card => {
-    card.classList.toggle('is-hidden', value !== 'todos' && card.dataset.filter !== value);
-  });
-}
-
-function initPortfolioFilter(){
-  const filters = document.querySelectorAll('.filter');
-
-  filters.forEach(button => {
-    button.addEventListener('click', () => {
-      filters.forEach(item => item.classList.toggle('is-active', item === button));
-      applyPortfolioFilter(button.dataset.filter);
-    });
-  });
-
-  document.getElementById('portfolio-grid').addEventListener('click', event => {
-    if (!event.target.closest('#ver-todas')) return;
-    event.preventDefault();
-    document.querySelector('.filter[data-filter="todos"]').click();
-  });
-}
-
-function initLightbox(){
-  const lightbox = document.getElementById('lightbox');
-  const title = document.getElementById('lightbox-title');
-  const type = document.getElementById('lightbox-type');
-  const location = document.getElementById('lightbox-location');
-  const image = lightbox.querySelector('.lightbox__img');
-  let lastFocused = null;
-
-  const open = card => {
-    lastFocused = card;
-    title.textContent = card.dataset.title;
-    type.textContent = card.dataset.type;
-    location.textContent = card.dataset.location;
-    image.style.backgroundImage = getComputedStyle(card.querySelector('.p-card__img')).backgroundImage;
-    lightbox.classList.add('is-open');
-    lightbox.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    lightbox.querySelector('.lightbox__close').focus();
-  };
-
-  const close = () => {
-    if (!lightbox.classList.contains('is-open')) return;
-    lightbox.classList.remove('is-open');
-    lightbox.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    lastFocused?.focus();
-  };
-
-  document.getElementById('portfolio-grid').addEventListener('click', event => {
-    const card = event.target.closest('.p-card[data-title]');
-    if (card) open(card);
-  });
-  lightbox.querySelectorAll('[data-close]').forEach(element => element.addEventListener('click', close));
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+  onceVisible(document.querySelectorAll('[data-count]'), animate, 0.5);
 }
 
 /* ==========================================================================
@@ -371,22 +375,9 @@ const FORM_VALIDATORS = {
   servico: value => value.trim().length > 0
 };
 
-function getSubmitErrorMessage(error){
-  const code = error.code || '';
-  const message = String(error.message || '').toLowerCase();
-  if (code === '42P01' || (message.includes('solicitacoes') && message.includes('not found'))) {
-    return 'O formulário ainda não está configurado no banco. Execute o arquivo supabase/schema.sql no Supabase.';
-  }
-  if (code === '42501' || message.includes('row-level security') || message.includes('permission')) {
-    return 'O banco bloqueou o envio. Execute novamente a parte de políticas do arquivo supabase/schema.sql no Supabase.';
-  }
-  return 'Não foi possível enviar agora. Verifique sua conexão e tente novamente.';
-}
-
 function initForm(){
   const form = document.getElementById('orcamento-form');
-  if (!form) return;
-  const feedback = document.getElementById('form-success');
+  const feedback = document.getElementById('form-feedback');
   const submit = form.querySelector('[type="submit"]');
 
   const showFeedback = (message, isError = false) => {
@@ -396,9 +387,7 @@ function initForm(){
   };
 
   const validateField = field => {
-    const rule = FORM_VALIDATORS[field.name];
-    if (!rule) return true;
-    const valid = rule(field.value);
+    const valid = FORM_VALIDATORS[field.name](field.value);
     field.closest('.form__field').classList.toggle('has-error', !valid);
     field.setAttribute('aria-invalid', String(!valid));
     return valid;
@@ -414,24 +403,19 @@ function initForm(){
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
-
-    const fields = Object.keys(FORM_VALIDATORS).map(name => form.elements[name]);
-    const invalid = fields.filter(field => !validateField(field));
+    const invalid = Object.keys(FORM_VALIDATORS).map(name => form.elements[name]).filter(field => !validateField(field));
     if (invalid.length) {
       showFeedback('');
       invalid[0].focus();
       return;
     }
-
     if (!supabaseClient) {
       showFeedback('Não foi possível conectar ao sistema. Tente novamente em instantes.', true);
       return;
     }
 
     submit.disabled = true;
-    submit.setAttribute('aria-busy', 'true');
     showFeedback('');
-
     let error;
     try {
       ({ error } = await supabaseClient.from('solicitacoes').insert({
@@ -445,15 +429,13 @@ function initForm(){
       error = requestError;
     } finally {
       submit.disabled = false;
-      submit.removeAttribute('aria-busy');
     }
 
     if (error) {
-      showFeedback(getSubmitErrorMessage(error), true);
+      showFeedback('Não foi possível enviar agora. Tente novamente ou fale conosco pelo WhatsApp.', true);
       return;
     }
-
-    showFeedback('Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.');
+    showFeedback('Solicitação recebida. Nossa equipe técnica retornará em breve.');
     form.reset();
   });
 }
