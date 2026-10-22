@@ -1,40 +1,36 @@
 # WM Gabião — Site institucional
 
-Site institucional estático (HTML5, CSS3 e JavaScript puro, sem frameworks) para a **WM Gabião & Construção LTDA**.
+Site estático (HTML5, CSS3 e JavaScript puro, sem frameworks) da **WM Gabião & Construção LTDA**, com painel administrativo e banco de dados no Supabase.
 
 ## Estrutura
 
 ```
 /wm-gabiao
 │
-├── index.html            # Site público
-├── admin.html            # Painel de solicitações de orçamento
+├── index.html              # Site público
+├── admin.html              # Painel administrativo
 ├── css/
-│   ├── style.css         # Estilos do site
-│   └── admin.css         # Estilos do painel
+│   ├── style.css           # Estilos do site
+│   └── admin.css           # Estilos do painel
 ├── js/
-│   ├── config.js         # Configuração do Supabase (compartilhada)
-│   ├── script.js         # Comportamento do site
-│   └── admin.js          # Comportamento do painel
+│   ├── config.js           # Configuração do Supabase (compartilhada)
+│   ├── data.js             # Conteúdo padrão (textos, obras e clientes)
+│   ├── script.js           # Comportamento do site
+│   ├── portfolio-pdf.js    # Gera o portfólio em PDF no navegador
+│   └── admin.js            # Comportamento do painel
 ├── assets/
-│   ├── images/           # Fotos das obras (nomes em minúsculas, sem espaços)
-│   ├── icons/            # favicon.png
-│   └── logo/             # logo-wm-gabiao.png
+│   ├── portfolio/          # Fotos das obras (portfólio oficial)
+│   ├── clients/            # Logos de clientes
+│   ├── fonts/              # Fontes usadas no PDF (Bebas Neue e Montserrat)
+│   ├── icons/              # favicon-wm.png
+│   └── logo/               # logo-wm-portfolio.png
 ├── supabase/
-│   └── schema.sql        # Tabelas, permissões e dados iniciais
-├── netlify.toml          # Deploy no Netlify
-└── .github/workflows/    # Deploy no GitHub Pages
+│   └── schema.sql          # Tabelas, permissões e conteúdo inicial
+├── netlify.toml            # Deploy no Netlify
+└── .github/workflows/      # Deploy no GitHub Pages
 ```
 
-### Convenções
-
-- Nomes de arquivos de imagem em minúsculas, com hífens e sem acentos (ex.: `muro-contencao.jpg`).
-- Fotos otimizadas para a web (máx. 1600 px, JPEG ~80%) antes de serem adicionadas.
-- A configuração do Supabase fica apenas em `js/config.js`.
-
 ## Como visualizar
-
-Abra `index.html` diretamente no navegador, ou sirva a pasta com um servidor local:
 
 ```bash
 npx serve .
@@ -42,55 +38,51 @@ npx serve .
 python3 -m http.server
 ```
 
-## Dados configurados
+## Como o conteúdo funciona
 
-- Telefone e WhatsApp: (15) 99116-7340
-- E-mail: eduatdo.oliveira222220@gmail.com
-- Instagram: @wmgabiao
-- Atendimento: 24 horas, em todo o Brasil
-- Indicadores: +25 obras, +25 projetos e +6 profissionais
-- Imagens reais aplicadas nas seções de serviços, obras e apresentação
-- Logo oficial e novo favicon configurados
+O site já traz um conteúdo padrão em `js/data.js`. Quando o Supabase responde, o que estiver salvo no banco substitui esse padrão. Assim o site continua no ar mesmo se o banco estiver fora do ar.
 
-## Banco de dados e área administrativa
+| Tabela | Uso |
+|---|---|
+| `site_content` | Todos os textos, contatos, indicadores e fotos de fundo |
+| `portfolio_projects` | Obras do portfólio (várias fotos por obra) |
+| `clients` | Clientes da faixa animada (nome e logo) |
+| `solicitacoes` | Pedidos de orçamento enviados pelo formulário |
+| `admin_users` | Quem pode editar o site |
 
-O formulário de orçamento salva as solicitações na tabela `solicitacoes` do Supabase. O painel em `admin.html` permite fazer login, buscar solicitações, filtrar por status, marcar como atendida/pendente e excluir registros.
+As fotos enviadas pelo painel ficam no bucket público `site-media` do Supabase Storage. O painel reduz as fotos para no máximo 1600 px antes de enviar.
 
-O site também lê, se existirem, as tabelas `site_content`, `services` e `projects` para sobrescrever textos, contatos, indicadores, serviços e obras. Sem elas (ou sem conexão), o conteúdo padrão do `index.html` é exibido.
+## Painel administrativo (`admin.html`)
+
+- **Solicitações**: buscar, filtrar, marcar como atendida e excluir.
+- **Textos e fotos**: editar todos os textos do site e trocar as fotos de fundo.
+- **Portfólio**: criar, editar, ocultar e excluir obras; enviar fotos e escolher a capa.
+- **Clientes**: adicionar e remover clientes, mudar a ordem e enviar logos.
+
+O botão **Baixar portfólio em PDF** do site gera o PDF na hora, com os dados atuais, no padrão visual do portfólio original.
 
 ### Configuração do Supabase
 
-1. Abra o SQL Editor do projeto Supabase.
-2. Execute o conteúdo de `supabase/schema.sql` (pode ser executado mais de uma vez; ele também atualiza caminhos antigos de imagens).
-3. Em Authentication > Users, crie o usuário administrador com e-mail e senha.
+1. Abra o SQL Editor do projeto e execute `supabase/schema.sql` (pode ser executado mais de uma vez).
+2. Em Authentication > Users, crie o usuário administrador.
+3. Torne esse usuário administrador:
+   ```sql
+   insert into public.admin_users (user_id)
+   select id from auth.users where email = 'email@exemplo.com';
+   ```
 4. Acesse `admin.html` e entre com esse usuário.
 
-A chave usada no frontend (`js/config.js`) é uma chave publicável. Nunca coloque uma chave `service_role` no HTML ou JavaScript.
+A chave em `js/config.js` é uma chave publicável. Nunca coloque uma chave `service_role` no HTML ou JavaScript.
 
-## Paleta de cores
+## Identidade visual
 
 | Uso | Cor |
 |---|---|
-| Preto azulado | `#071015` |
-| Preto | `#05080A` |
-| Branco | `#FFFFFF` |
-| Cinza claro | `#F4F5F3` |
-| Cinza escuro | `#1B2428` |
-| Dourado (destaque) | `#D8A72D` |
-| Terroso (secundário) | `#8D6B32` |
+| Fundo | `#0E0E0E` / `#161616` |
+| Painéis | `#1E1E1E` |
+| Texto | `#F4F2EC` |
+| Amarelo (destaque) | `#F2B233` |
+| Amarelo da logo | `#FFC300` |
 
-## Tipografia
-
-- Títulos: **Manrope** (700/800)
-- Texto: **Inter** (400/500/600)
-
-## Recursos incluídos
-
-- Header fixo com fundo transparente no topo e sólido ao rolar
-- Menu mobile em painel lateral
-- Seções: Hero, Soluções, Obras (com filtro e lightbox), Onde atuamos, Sobre, Diferenciais, Orçamento (formulário validado), Contato, Rodapé
-- Botão flutuante do WhatsApp e botão "voltar ao topo"
-- Animações leves ao rolar a página (`data-reveal`, respeita `prefers-reduced-motion`)
-- Formulário de orçamento com validação em JavaScript puro
-- Marcação Schema.org (`GeneralContractor`) para SEO
-- 100% responsivo (mobile, tablet e desktop)
+- Títulos: **Bebas Neue**
+- Texto: **Montserrat**
