@@ -187,6 +187,8 @@ h1,h2,h3,p{margin:0;}
 }
 .mobile-menu .btn{align-self:flex-start;margin-top:12px;font-family:var(--font-body);}
 .mobile-menu.is-open{opacity:1;pointer-events:auto;}
+.mobile-menu__admin{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--muted);font-family:var(--font-body);font-size:14px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;}
+.mobile-menu__admin:hover{color:var(--yellow);}
 
 /* ==========================================================================
    HERO
@@ -540,7 +542,9 @@ a.contact__item:hover strong{color:var(--yellow);}
    RESPONSIVO
    ========================================================================== */
 @media (max-width:1080px){
-  .nav,.header__actions{display:none;}
+  .nav,.header__actions .btn{display:none;}
+  /* No celular, o ícone do admin fica ao lado do menu. */
+  .header__actions{margin-left:auto;}
   .hamburger{display:flex;}
   .solutions{grid-template-columns:repeat(2, 1fr);}
   .project,.project:nth-child(5n+1){grid-column:span 6;aspect-ratio:4/5;}
